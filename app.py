@@ -18,6 +18,12 @@ with st.sidebar:
     st.header("⚙️ Geometry & Material")
     fc_prime = st.number_input("f'c (ksc)", value=280)
     fy = st.number_input("Fy (ksc)", value=4000)
+    
+    # ย้ายขนาดเหล็กมาไว้ตรงนี้ (ใช้ขนาดเดียวทั้ง Main และ Extra)
+    db_mm = st.selectbox("Rebar Size (DB - mm)", [12, 16, 20, 25, 28], index=2)
+    db_m = db_mm / 1000
+    
+    st.divider()
     span_cc = st.number_input("Span C/C (m)", value=6.40)
     col_l = st.number_input("Left Col Width (m)", value=0.40)
     col_r = st.number_input("Right Col Width (m)", value=0.50)
@@ -26,48 +32,40 @@ with st.sidebar:
     beam_h = beam_h_real * 2 # โกง Scale ลึก 2 เท่าสำหรับการวาด
 
     st.divider()
-    st.header("🟦 Main Rebars (MT/MB)")
-    db_main = st.selectbox("Size (mm)", [12, 16, 20, 25, 28], index=2)
+    st.header("🟦 Main Rebars Qty")
     qty_mt = st.number_input("Qty Main Top (MT)", value=2)
     qty_mb = st.number_input("Qty Main Bot (MB)", value=2)
 
     st.divider()
-    st.header("🟪 Extra Rebars (ET/EB)")
-    db_extra = st.selectbox("Extra Size (mm)", [12, 16, 20, 25, 28], index=2)
+    st.header("🟪 Extra Rebars Qty")
     qty_et = st.number_input("Qty Extra Top (ET)", value=2)
     qty_eb = st.number_input("Qty Extra Bot (EB)", value=2)
 
 # ==========================================
 # 2. [CALCULATION LOGIC]
 # ==========================================
-db_m = db_main / 1000
-db_e_m = db_extra / 1000
 sqrt_fc = min(np.sqrt(fc_prime), 26.2)
-psi_s = 0.8 if db_main <= 19 else 1.0
+psi_s = 0.8 if db_mm <= 19 else 1.0
 ld_m = (fy * 1.0 * 1.0 * 1.0 * psi_s) / (5.3 * 1.0 * sqrt_fc) * db_m
 ld_m = max(ld_m, 0.30)
 
 fc_psi = fc_prime * 14.223
 psi_c = (fc_psi / 15000) + 0.6 if fc_psi < 6000 else 1.0
-ldh_in = (fy * 14.223 * 1.0 * 1.0 * 1.0 * psi_c) / (50 * 1.0 * min(np.sqrt(fc_psi), 100)) * ((db_main/25.4)**1.5)
+ldh_in = (fy * 14.223 * 1.0 * 1.0 * 1.0 * psi_c) / (50 * 1.0 * min(np.sqrt(fc_psi), 100)) * ((db_mm/25.4)**1.5)
 ldh_m = max(ldh_in * 0.0254, 8 * db_m, 0.15)
 
 x_f_l, x_f_r = col_l / 2, span_cc - col_r / 2
 ln = x_f_r - x_f_l
-et_start = x_f_r - (ln * 0.25 + 15 * db_e_m)
-et_end = (span_cc + col_r/2) + (ln * 0.25 + 15 * db_e_m)
-eb_start = x_f_l + (ln * 0.25) - (20 * db_e_m)
-eb_end = x_f_r - (ln * 0.25) + (20 * db_e_m)
+et_start = x_f_r - (ln * 0.25 + 15 * db_m)
+et_end = (span_cc + col_r/2) + (ln * 0.25 + 15 * db_m)
+eb_start = x_f_l + (ln * 0.25) - (20 * db_m)
+eb_end = x_f_r - (ln * 0.25) + (20 * db_m)
 
 # ==========================================
 # 3. [DRAWING FUNCTION]
 # ==========================================
 def draw_app():
-    # ขนาดตัวอักษรขยาย 30%
-    FS_TITLE = 18
-    FS_LABEL = 13
-    FS_DIM = 12
-    FS_RES = 16
+    FS_TITLE, FS_LABEL, FS_DIM, FS_RES = 18, 13, 12, 16
 
     fig = plt.figure(figsize=(10, 13))
     gs = gridspec.GridSpec(3, 1, height_ratios=[1.2, 0.6, 0.2], hspace=0.35)
@@ -105,14 +103,15 @@ def draw_app():
     ax0.set_xlim(-1, span_cc+1); ax0.set_ylim(-1.2, beam_h+1.2); ax0.set_aspect('equal'); ax0.axis('off')
     ax0.set_title(f"Longitudinal Section (Actual H={beam_h_real:.2f} m)", fontsize=FS_TITLE, weight='bold', pad=20)
 
-    # --- 2. Cross Sections ---
+    # --- 2. Cross Sections (Swapped order & Names) ---
     def draw_cs(ax, title, type):
         b, h = 0.4, 0.6
         ax.add_patch(patches.Rectangle((0,0), b, h, fc='#fafafa', ec='k', lw=2))
         ax.set_title(title, fontsize=FS_LABEL+1, weight='bold', pad=15)
-        # Rebar Circles
+        # MT/MB
         for i in range(qty_mt): ax.add_patch(patches.Circle((0.08 + i*0.24/(max(qty_mt-1,1)), h-0.08), 0.015, color='blue'))
         for i in range(qty_mb): ax.add_patch(patches.Circle((0.08 + i*0.24/(max(qty_mb-1,1)), 0.08), 0.015, color='red'))
+        # Extra (EB for Mid, ET for Support)
         if type == "mid":
             for i in range(qty_eb): ax.add_patch(patches.Circle((0.08 + i*0.24/(max(qty_eb-1,1)), 0.18), 0.015, color='orange'))
         else:
@@ -120,8 +119,9 @@ def draw_app():
         ax.set_xlim(-0.1, 0.5); ax.set_ylim(-0.2, 0.9); ax.set_aspect('equal'); ax.axis('off')
 
     inner_gs = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs[1], wspace=0.1)
-    draw_cs(fig.add_subplot(inner_gs[0]), "Support A-A", "support")
-    draw_cs(fig.add_subplot(inner_gs[1]), "Mid-Span B-B", "mid")
+    # A-A is Mid-span, B-B is Support
+    draw_cs(fig.add_subplot(inner_gs[0]), "Section A-A (Mid-Span)", "mid")
+    draw_cs(fig.add_subplot(inner_gs[1]), "Section B-B (Support)", "support")
 
     # --- 3. Result Summary ---
     ax_res = fig.add_subplot(gs[2])
