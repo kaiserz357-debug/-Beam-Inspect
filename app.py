@@ -5,9 +5,9 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 # ตั้งค่าหน้าจอแนวตั้งสำหรับมือถือ
-st.set_page_config(page_title="Beam Detailer", layout="centered")
+st.set_page_config(page_title="Beam Inspection", layout="centered")
 
-st.title("🏗️ Beam Rebar Calculator")
+st.title("🏗️ Beam Inspection")
 
 # ==========================================
 # 1. [INPUT SECTION]
