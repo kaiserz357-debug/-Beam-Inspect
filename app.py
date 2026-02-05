@@ -4,134 +4,127 @@ import matplotlib.patches as patches
 import matplotlib.gridspec as gridspec
 import numpy as np
 
-# ปรับตั้งค่าหน้าจอให้เหมาะกับมือถือ
-st.set_page_config(page_title="Beam Rebar Calculator", layout="centered")
+# ตั้งค่าหน้าจอแนวตั้ง
+st.set_page_config(page_title="Beam Detailer", layout="centered")
 
-st.title("🏗️ Beam Rebar Detailer")
+st.title("🏗️ Beam Rebar Calculator")
 st.write("ACI 318-19 (ksc unit)")
 
 # ==========================================
-# 1. [SIDEBAR / INPUT SECTION]
+# 1. [INPUT SECTION - แบ่งหมวดหมู่]
 # ==========================================
 with st.sidebar:
-    st.header("📌 Input Parameters")
+    st.header("⚙️ Geometry & Material")
     fc_prime = st.number_input("f'c (ksc)", value=280)
     fy = st.number_input("Fy (ksc)", value=4000)
-    
-    st.divider()
     span_cc = st.number_input("Span C/C (m)", value=6.40)
-    col_left_w = st.number_input("Left Column Width (m)", value=0.40)
-    col_right_w = st.number_input("Right Column Width (m)", value=0.50)
+    col_l = st.number_input("Left Col Width (m)", value=0.40)
+    col_r = st.number_input("Right Col Width (m)", value=0.50)
     beam_h = st.number_input("Beam Height (m)", value=0.60)
-    
+
     st.divider()
-    db_mm = st.selectbox("Main Bar Size (mm)", [12, 16, 20, 25, 28], index=2)
-    db_m = db_mm / 1000
-    stirrup_db = st.selectbox("Stirrup Size (mm)", [6, 9, 12], index=1)
-    covering = 0.04
-    offset = 0.08
+    st.header("🟦 Main Rebars (MT/MB)")
+    db_main = st.selectbox("Size (mm)", [12, 16, 20, 25, 28], index=2)
+    qty_mt = st.number_input("Qty Main Top (MT)", value=2)
+    qty_mb = st.number_input("Qty Main Bot (MB)", value=2)
+
+    st.divider()
+    st.header("🟪 Extra Rebars (ET/EB)")
+    db_extra = st.selectbox("Extra Size (mm)", [12, 16, 20, 25, 28], index=2)
+    qty_et = st.number_input("Qty Extra Top (ET)", value=2)
+    qty_eb = st.number_input("Qty Extra Bot (EB)", value=2)
 
 # ==========================================
 # 2. [CALCULATION LOGIC]
 # ==========================================
-psi_t, psi_e, psi_g, lambda_val = 1.0, 1.0, 1.0, 1.0
-psi_s = 0.8 if db_mm <= 19 else 1.0  
-sqrt_fc_ksc = min(np.sqrt(fc_prime), 26.2)
+db_m = db_main / 1000
+db_e_m = db_extra / 1000
 
-# Ld (Straight)
-ld_m = (fy * psi_t * psi_e * psi_g * psi_s) / (5.3 * lambda_val * sqrt_fc_ksc) * db_m
+# ACI 318-19 Ld & Ldh
+sqrt_fc = min(np.sqrt(fc_prime), 26.2)
+psi_s = 0.8 if db_main <= 19 else 1.0
+ld_m = (fy * 1.0 * 1.0 * 1.0 * psi_s) / (5.3 * 1.0 * sqrt_fc) * db_m
 ld_m = max(ld_m, 0.30)
 
-# Ldh (Hook)
 fc_psi = fc_prime * 14.223
-sqrt_fc_psi = min(np.sqrt(fc_psi), 100)
 psi_c = (fc_psi / 15000) + 0.6 if fc_psi < 6000 else 1.0
-db_in = db_mm / 25.4
-fy_psi = fy * 14.223
-ldh_in = (fy_psi * psi_e * 1.0 * 1.0 * psi_c) / (50 * lambda_val * sqrt_fc_psi) * (db_in**1.5)
+ldh_in = (fy * 14.223 * 1.0 * 1.0 * 1.0 * psi_c) / (50 * 1.0 * min(np.sqrt(fc_psi), 100)) * ((db_main/25.4)**1.5)
 ldh_m = max(ldh_in * 0.0254, 8 * db_m, 0.15)
 
-# --- Coordinates ---
-x_face_l = col_left_w / 2            
-x_face_r = span_cc - col_right_w / 2 
-clear_span = x_face_r - x_face_l     
+# Coordinates & Dimensions
+x_f_l = col_l / 2
+x_f_r = span_cc - col_r / 2
+ln = x_f_r - x_f_l
 
-et_reach = clear_span * 0.25
-et_mid_start = x_face_r - (et_reach + 15 * db_m)
-et_mid_end = (span_cc + col_right_w/2) + (et_reach + 15 * db_m)
-et_total = et_mid_end - et_mid_start
-
-eb_start = x_face_l + (clear_span * 0.25) - (20 * db_m)
-eb_end = x_face_r - (clear_span * 0.25) + (20 * db_m)
-eb_total = eb_end - eb_start
+et_start = x_f_r - (ln * 0.25 + 15 * db_e_m)
+et_end = (span_cc + col_r/2) + (ln * 0.25 + 15 * db_e_m)
+eb_start = x_f_l + (ln * 0.25) - (20 * db_e_m)
+eb_end = x_f_r - (ln * 0.25) + (20 * db_e_m)
 
 # ==========================================
-# 3. [DRAWING SECTION]
+# 3. [DRAWING FUNCTION]
 # ==========================================
-def draw_drawing():
-    # ปรับ figsize ให้เป็นแนวตั้งสำหรับมือถือ
-    fig = plt.figure(figsize=(10, 14))
-    gs = gridspec.GridSpec(3, 1, height_ratios=[1, 0.8, 0.2], hspace=0.3)
+def draw_app():
+    fig = plt.figure(figsize=(10, 16))
+    gs = gridspec.GridSpec(4, 1, height_ratios=[1.2, 0.4, 0.8, 0.25], hspace=0.4)
 
-    # --- Longitudinal ---
+    # --- 1. Longitudinal Section ---
     ax0 = fig.add_subplot(gs[0])
-    ax0.axvline(x=0, color='gray', ls='-.', lw=1)
-    ax0.axvline(x=span_cc, color='gray', ls='-.', lw=1)
-    ax0.add_patch(patches.Rectangle((-col_left_w/2, -0.4), col_left_w, beam_h+0.8, color='#f2f2f2', ec='gray', ls='--'))
-    ax0.add_patch(patches.Rectangle((span_cc-col_right_w/2, -0.4), col_right_w, beam_h+0.8, color='#f2f2f2', ec='gray', ls='--'))
+    # Column/Grid
+    ax0.axvline(0, color='gray', ls='-.', alpha=0.5)
+    ax0.axvline(span_cc, color='gray', ls='-.', alpha=0.5)
+    ax0.add_patch(patches.Rectangle((-col_l/2, -0.6), col_l, beam_h+1.2, fc='#f2f2f2', ec='gray', ls='--'))
+    ax0.add_patch(patches.Rectangle((span_cc-col_r/2, -0.6), col_r, beam_h+1.2, fc='#f2f2f2', ec='gray', ls='--'))
     
-    ax0.plot([-col_left_w/2, span_cc+0.5], [beam_h, beam_h], 'k', lw=2)
-    ax0.plot([-col_left_w/2, span_cc+0.5], [0, 0], 'k', lw=2)
+    # Beam & Rebars
+    ax0.plot([-col_l/2, span_cc+0.5], [beam_h, beam_h], 'k', lw=2)
+    ax0.plot([-col_l/2, span_cc+0.5], [0, 0], 'k', lw=2)
     
-    # Rebars
-    x_re_start = x_face_l - ldh_m
-    ax0.plot([x_re_start, span_cc+0.4], [beam_h-0.05, beam_h-0.05], 'blue', lw=2)
-    ax0.plot([x_re_start, x_re_start], [beam_h-0.05, beam_h-0.05-12*db_m], 'blue', lw=2)
-    ax0.plot([x_re_start, span_cc+0.4], [0.05, 0.05], 'red', lw=2)
-    ax0.plot([x_re_start, x_re_start], [0.05, 0.05+12*db_m], 'red', lw=2)
+    # MT/MB with Ldh Hook
+    ax0.plot([x_f_l-ldh_m, span_cc+0.5], [beam_h-0.05, beam_h-0.05], 'blue', lw=2, label='MT')
+    ax0.plot([x_f_l-ldh_m, x_f_l-ldh_m], [beam_h-0.05, beam_h-0.05-12*db_m], 'blue', lw=2)
+    ax0.plot([x_f_l-ldh_m, span_cc+0.5], [0.05, 0.05], 'red', lw=2, label='MB')
+    ax0.plot([x_f_l-ldh_m, x_f_l-ldh_m], [0.05, 0.05+12*db_m], 'red', lw=2)
 
-    # Extra Bars
-    ax0.plot([et_mid_start, et_mid_end], [beam_h-0.13, beam_h-0.13], 'darkmagenta', lw=2.5)
+    # ET/EB
+    ax0.plot([et_start, et_end], [beam_h-0.13, beam_h-0.13], 'purple', lw=2.5)
     ax0.plot([eb_start, eb_end], [0.13, 0.13], 'orange', lw=2.5)
-    
+    ax0.text((et_start+et_end)/2, beam_h-0.13, f"ET: L={et_end-et_start:.2f}", ha='center', va='bottom', fontsize=8, color='purple', weight='bold')
+    ax0.text((eb_start+eb_end)/2, 0.13, f"EB: L={eb_end-eb_start:.2f}", ha='center', va='bottom', fontsize=8, color='darkorange', weight='bold')
+
+    # Dimensions
+    ax0.annotate('', xy=(0, beam_h+0.4), xytext=(span_cc, beam_h+0.4), arrowprops=dict(arrowstyle='<->', color='red'))
+    ax0.text(span_cc/2, beam_h+0.45, f"Span C/C = {span_cc:.2f} m", color='red', ha='center', weight='bold')
+    ax0.annotate('', xy=(x_f_l, -0.4), xytext=(x_f_r, -0.4), arrowprops=dict(arrowstyle='<->', color='black'))
+    ax0.text(span_cc/2, -0.55, f"Ln = {ln:.2f} m", ha='center', weight='bold')
+
+    ax0.set_xlim(-1, span_cc+1); ax0.set_ylim(-0.8, beam_h+0.8); ax0.set_aspect('equal'); ax0.axis('off')
     ax0.set_title("Longitudinal Section", fontsize=14, weight='bold')
-    ax0.set_xlim(-0.8, span_cc+0.8); ax0.set_ylim(-0.6, beam_h+0.6); ax0.set_aspect('equal'); ax0.axis('off')
 
-    # --- Cross Sections (จัดเรียงแนวนอนในแถวเดียวกัน) ---
-    ax1 = fig.add_subplot(gs[1])
-    ax1.axis('off')
-    # วาดหน้าตัดย่อยใน ax1
-    def draw_inner_cross(x_off, title, s_type):
+    # --- 2. Cross Sections ---
+    def draw_cs(ax, title, type):
         b, h = 0.4, 0.6
-        ax1.add_patch(patches.Rectangle((x_off, 0), b, h, fc='#f8f9fa', ec='black', lw=2))
-        ax1.text(x_off + b/2, h+0.05, title, ha='center', weight='bold')
-        # วาดเหล็กแบบย่อ
-        db_r = db_m/2
-        ax1.add_patch(patches.Circle((x_off+0.08, 0.52), db_r, color='blue'))
-        ax1.add_patch(patches.Circle((x_off+0.32, 0.52), db_r, color='blue'))
-        ax1.add_patch(patches.Circle((x_off+0.08, 0.08), db_r, color='red'))
-        ax1.add_patch(patches.Circle((x_off+0.32, 0.08), db_r, color='red'))
-        if s_type == "mid":
-            ax1.add_patch(patches.Circle((x_off+0.08, 0.18), db_r, color='orange'))
-            ax1.add_patch(patches.Circle((x_off+0.32, 0.18), db_r, color='orange'))
+        ax.add_patch(patches.Rectangle((0,0), b, h, fc='#fafafa', ec='k', lw=2))
+        ax.set_title(title, fontsize=10, weight='bold')
+        # MT
+        for i in range(qty_mt): ax.add_patch(patches.Circle((0.08 + i*0.24/(qty_mt-1 if qty_mt>1 else 1), h-0.08), 0.015, color='blue'))
+        # MB
+        for i in range(qty_mb): ax.add_patch(patches.Circle((0.08 + i*0.24/(qty_mb-1 if qty_mb>1 else 1), 0.08), 0.015, color='red'))
+        if type == "mid":
+            for i in range(qty_eb): ax.add_patch(patches.Circle((0.08 + i*0.24/(qty_eb-1 if qty_eb>1 else 1), 0.18), 0.015, color='orange'))
         else:
-            ax1.add_patch(patches.Circle((x_off+0.08, 0.42), db_r, color='purple'))
-            ax1.add_patch(patches.Circle((x_off+0.32, 0.42), db_r, color='purple'))
+            for i in range(qty_et): ax.add_patch(patches.Circle((0.08 + i*0.24/(qty_et-1 if qty_et>1 else 1), h-0.18), 0.015, color='purple'))
+        ax.set_xlim(-0.1, 0.5); ax.set_ylim(-0.1, 0.75); ax.set_aspect('equal'); ax.axis('off')
 
-    draw_inner_cross(0, "Support", "support")
-    draw_inner_cross(0.6, "Mid-Span", "mid")
-    ax1.set_xlim(-0.1, 1.1); ax1.set_ylim(-0.1, 0.8); ax1.set_aspect('equal')
+    draw_cs(fig.add_subplot(gs[2,0], anchor='W'), "Support A-A", "support")
+    draw_cs(fig.add_subplot(gs[2,0], anchor='E'), "Mid-Span B-B", "mid")
 
-    # --- Summary Box ---
-    ax2 = fig.add_subplot(gs[2])
-    res_txt = (f"Ld = {ld_m:.3f} m. | Ldh = {ldh_m:.3f} m.\n"
-               f"Extra Top Length = {et_total:.2f} m.\n"
-               f"Extra Bot Length = {eb_total:.2f} m.")
-    ax2.text(0.5, 0.5, res_txt, ha='center', va='center', weight='bold', color='darkgreen',
-             bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1'))
-    ax2.axis('off')
-    
+    # --- 3. Result Box ---
+    ax_res = fig.add_subplot(gs[3])
+    txt = f"ACI 318-19 Summary\nLd (Straight) = {ld_m:.3f} m\nLdh (Hook) = {ldh_m:.3f} m"
+    ax_res.text(0.5, 0.5, txt, ha='center', va='center', weight='bold', color='darkgreen', bbox=dict(fc='#f1f8e9', ec='darkgreen', boxstyle='round,pad=1'))
+    ax_res.axis('off')
+
     return fig
 
-# แสดงผลใน Streamlit
-st.pyplot(draw_drawing())
+st.pyplot(draw_app())
