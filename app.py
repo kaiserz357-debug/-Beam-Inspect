@@ -98,7 +98,7 @@ def draw_app():
     ax0.annotate('', xy=(0, beam_h+0.45), xytext=(span_cc, beam_h+0.45), arrowprops=dict(arrowstyle='<->', color='red'))
     ax0.text(span_cc/2, beam_h+0.52, f"Span C/C = {span_cc:.2f} m", color='red', ha='center', weight='bold', fontsize=FS_DIM)
     ax0.annotate('', xy=(x_f_l, -0.45), xytext=(x_f_r, -0.45), arrowprops=dict(arrowstyle='<->', color='black'))
-    ax0.text(span_cc/2, -0.65, f"Ln = {ln:.2f} m", ha='center', weight='bold', fontsize=FS_DIM)
+    ax0.text(span_cc/2, -0.65, f"Lo = {ln:.2f} m", ha='center', weight='bold', fontsize=FS_DIM)
 
     ax0.set_xlim(-1, span_cc+1); ax0.set_ylim(-1.2, beam_h+1.2); ax0.set_aspect('equal'); ax0.axis('off')
     ax0.set_title(f"Longitudinal Section (Actual H={beam_h_real:.2f} m)", fontsize=FS_TITLE, weight='bold', pad=20)
