@@ -8,7 +8,7 @@ import numpy as np
 st.set_page_config(page_title="Beam Detailer", layout="centered")
 
 # --- HEADER SECTION ---
-st.title("🏗️ Beam Rebar Calculator")
+st.title("🏗️ Beam Rebar Inspection")
 st.markdown("<p style='text-align: center; color: #666; font-size: 1.1em; margin-top: -15px;'>Developed By Ardharn 2026</p>", unsafe_allow_html=True)
 
 # ==========================================
