@@ -5,9 +5,11 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 # ตั้งค่าหน้าจอแนวตั้งสำหรับมือถือ
-st.set_page_config(page_title="Beam Inspection", layout="centered")
+st.set_page_config(page_title="Beam Detailer", layout="centered")
 
-st.title("🏗️ Beam Inspection")
+# --- HEADER SECTION ---
+st.title("🏗️ Beam Rebar Calculator")
+st.markdown("<p style='text-align: center; color: #666; font-size: 1.1em; margin-top: -15px;'>Developed By Ardharn 2026</p>", unsafe_allow_html=True)
 
 # ==========================================
 # 1. [INPUT SECTION]
@@ -21,7 +23,7 @@ with st.sidebar:
     col_r = st.number_input("Right Col Width (m)", value=0.50)
     beam_h_real = st.number_input("Beam Height (m)", value=0.60)
     
-    beam_h = beam_h_real * 2 # โกง Scale ลึก 2 เท่า
+    beam_h = beam_h_real * 2 # โกง Scale ลึก 2 เท่าสำหรับการวาด
 
     st.divider()
     st.header("🟦 Main Rebars (MT/MB)")
@@ -61,7 +63,7 @@ eb_end = x_f_r - (ln * 0.25) + (20 * db_e_m)
 # 3. [DRAWING FUNCTION]
 # ==========================================
 def draw_app():
-    # กำหนดขนาดตัวอักษรพื้นฐาน (ขยาย 30%)
+    # ขนาดตัวอักษรขยาย 30%
     FS_TITLE = 18
     FS_LABEL = 13
     FS_DIM = 12
