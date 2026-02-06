@@ -21,8 +21,8 @@ st.sidebar.subheader("Geometry & Reinforcement")
 span_cc = st.sidebar.number_input("Span C/C (m):", value=6.40, step=0.10)
 col_left_w = st.sidebar.number_input("Left Column Width (m):", value=0.40, step=0.05)
 col_right_w = st.sidebar.number_input("Right Column Width (m):", value=0.50, step=0.05)
-beam_h = 0.60
-db_mm = st.sidebar.selectbox("Main Bar Size (DB-mm):", options=[10, 12, 16, 20, 25, 28, 32], index=3)
+beam_h = st.sidebar.number_input("Beam Height (m):", value=0.60, step=0.05)
+db_mm = st.sidebar.number_input("Main Bar Size (DB-mm):", value=20, step=1)
 
 # Fixed Parameters
 stirrup_db = 9       
@@ -124,32 +124,33 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-def draw_main():
-    st.title("RC Beam Reinforcement Detail (ACI 318-19 vs KDA)")
-    
-    # 1. ปรับ Grid ให้เป็น 4 แถว เพื่อรองรับ 2 Summary และเพิ่ม hspace กันทับกัน
-    fig = plt.figure(figsize=(16, 14)) 
-    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.35, 0.35], hspace=0.7)
-    
-    # ... [โค้ดส่วนวาดรูป ax0 และ cross section อื่นๆ ของคุณ] ...
-
-    # 2. คำนวณค่า KDA Standard (ต้องคำนวณก่อนเรียกใช้)
+# ==========================================
+    # [KDA STANDARD LOGIC - REVISED]
+    # ==========================================
     kda_l1_multiplier = 0
     kda_ldh_multiplier = 0
 
     if fy_choice == 4000:
+        # เงื่อนไขสำหรับ L1 (Lapping)
         if fc_ksc in [210, 240]:
-            kda_l1_multiplier, kda_ldh_multiplier = 50, 17
+            kda_l1_multiplier = 50
+            kda_ldh_multiplier = 17
         elif fc_ksc in [280, 320, 350]:
-            kda_l1_multiplier, kda_ldh_multiplier = 45, 16
+            kda_l1_multiplier = 45
+            kda_ldh_multiplier = 16
+            
     elif fy_choice == 5000:
         if fc_ksc in [210, 240]:
-            kda_l1_multiplier, kda_ldh_multiplier = 68, 21
+            kda_l1_multiplier = 68
+            kda_ldh_multiplier = 21
         elif fc_ksc == 280:
-            kda_l1_multiplier, kda_ldh_multiplier = 60, 20
+            kda_l1_multiplier = 60
+            kda_ldh_multiplier = 20
         elif fc_ksc in [320, 350]:
-            kda_l1_multiplier, kda_ldh_multiplier = 55, 20
+            kda_l1_multiplier = 55
+            kda_ldh_multiplier = 20
 
+    # คำนวณค่าเพื่อแสดงผล (หน่วย mm)
     l1_kda_display = kda_l1_multiplier * db_mm
     ldh_kda_display = kda_ldh_multiplier * db_mm
 
@@ -158,26 +159,27 @@ def draw_main():
     # ==========================================
     
     # --- กล่องที่ 1 (ACI 318-19) ---
-    ax_txt1 = fig.add_subplot(gs[2, :]) 
+    ax_txt = fig.add_subplot(gs[2, :2])
     ld_mm_display = ld_m * 1000
     ldh_mm_display = ldh_m * 1000
     
-    res_txt1 = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
-                f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
+    res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
+               f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
     
-    ax_txt1.text(0.5, 0.5, res_txt1, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
-                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
-    ax_txt1.axis('off')
+    ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
+                bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
+    ax_txt.axis('off')
 
     # --- กล่องที่ 2 (KDA Standard) ---
-    ax_txt2 = fig.add_subplot(gs[3, :]) 
+    ax_txt2 = fig.add_subplot(gs[2, 2:])
     
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                 f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
     
     ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
-                 bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
+                bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
     ax_txt2.axis('off')
 
     st.pyplot(fig)
+
 draw_main()
