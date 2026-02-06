@@ -127,16 +127,34 @@ def draw_main():
 def draw_main():
     st.title("RC Beam Reinforcement Detail (ACI 318-19 vs KDA)")
     
-    # --- จุดที่ต้องแก้: เพิ่มแถวจาก 3 เป็น 4 และปรับ hspace ---
-    fig = plt.figure(figsize=(16, 14)) # เพิ่มความสูงรูปเล็กน้อย
-    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.35, 0.35], hspace=0.6)
+    # 1. ปรับ Grid ให้เป็น 4 แถว เพื่อรองรับ 2 Summary และเพิ่ม hspace กันทับกัน
+    fig = plt.figure(figsize=(16, 14)) 
+    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.35, 0.35], hspace=0.7)
     
-    # ... (ส่วนการวาด ax0 และ cross section คงเดิม) ...
-    # สมมติว่าวาด ax0 = fig.add_subplot(gs[0, :])
-    # สมมติว่าวาด cross section ที่ gs[1, 1] และ gs[1, 2]
-    
+    # ... [โค้ดส่วนวาดรูป ax0 และ cross section อื่นๆ ของคุณ] ...
+
+    # 2. คำนวณค่า KDA Standard (ต้องคำนวณก่อนเรียกใช้)
+    kda_l1_multiplier = 0
+    kda_ldh_multiplier = 0
+
+    if fy_choice == 4000:
+        if fc_ksc in [210, 240]:
+            kda_l1_multiplier, kda_ldh_multiplier = 50, 17
+        elif fc_ksc in [280, 320, 350]:
+            kda_l1_multiplier, kda_ldh_multiplier = 45, 16
+    elif fy_choice == 5000:
+        if fc_ksc in [210, 240]:
+            kda_l1_multiplier, kda_ldh_multiplier = 68, 21
+        elif fc_ksc == 280:
+            kda_l1_multiplier, kda_ldh_multiplier = 60, 20
+        elif fc_ksc in [320, 350]:
+            kda_l1_multiplier, kda_ldh_multiplier = 55, 20
+
+    l1_kda_display = kda_l1_multiplier * db_mm
+    ldh_kda_display = kda_ldh_multiplier * db_mm
+
     # ==========================================
-    # [SUMMARY SECTION - VERTICAL LAYOUT]
+    # [SUMMARY SECTION]
     # ==========================================
     
     # --- กล่องที่ 1 (ACI 318-19) ---
@@ -154,7 +172,6 @@ def draw_main():
     # --- กล่องที่ 2 (KDA Standard) ---
     ax_txt2 = fig.add_subplot(gs[3, :]) 
     
-    # คำนวณค่า KDA (ตรวจสอบให้แน่ใจว่า Logic นี้อยู่นอกหรือใน draw_main ก็ได้แต่ต้องก่อนบรรทัดนี้)
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                 f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
     
