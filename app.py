@@ -7,8 +7,8 @@ import numpy as np
 # ==========================================
 # 1. [INPUT SECTION - STREAMLIT SIDEBAR]
 # ==========================================
-st.set_page_config(layout="wide", page_title="RC Beam Detailer (SI Units)")
-st.sidebar.header("🛠 Design Parameters (SI Units)")
+st.set_page_config(layout="wide", page_title="RC Beam Inspection")
+st.sidebar.header("🛠 Beam Data Input")
 
 fc_ksc = st.sidebar.selectbox("Concrete Strength: f'c (ksc)", options=[210, 240, 280, 320, 350], index=2)
 fy_choice = st.sidebar.selectbox("Steel Strength: fy (ksc)", options=[4000, 5000], index=0)
@@ -87,7 +87,7 @@ def draw_cross(ax, title, s_type):
     ax.set_title(title, weight='bold', pad=25, fontsize=10)
 
 def draw_main():
-    st.title("RC Beam Detail (ACI 318-19 vs KDA)")
+    st.title("RC Beam Inspection")
     
     # 1. ปรับ Grid เป็น 4 แถว และเพิ่ม hspace เพื่อให้กล่อง Summary ด้านล่างมีที่ว่าง
     fig = plt.figure(figsize=(16, 15)) 
