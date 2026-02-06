@@ -131,54 +131,45 @@ def draw_main():
     kda_ldh_multiplier = 0
 
     if fy_choice == 4000:
-        # เงื่อนไขสำหรับ L1 (Lapping)
         if fc_ksc in [210, 240]:
-            kda_l1_multiplier = 50
-            kda_ldh_multiplier = 17
+            kda_l1_multiplier, kda_ldh_multiplier = 50, 17
         elif fc_ksc in [280, 320, 350]:
-            kda_l1_multiplier = 45
-            kda_ldh_multiplier = 16
+            kda_l1_multiplier, kda_ldh_multiplier = 45, 16
             
     elif fy_choice == 5000:
         if fc_ksc in [210, 240]:
-            kda_l1_multiplier = 68
-            kda_ldh_multiplier = 21
+            kda_l1_multiplier, kda_ldh_multiplier = 68, 21
         elif fc_ksc == 280:
-            kda_l1_multiplier = 60
-            kda_ldh_multiplier = 20
+            kda_l1_multiplier, kda_ldh_multiplier = 60, 20
         elif fc_ksc in [320, 350]:
-            kda_l1_multiplier = 55
-            kda_ldh_multiplier = 20
+            kda_l1_multiplier, kda_ldh_multiplier = 55, 20
 
-    # คำนวณค่าเพื่อแสดงผล (หน่วย mm)
     l1_kda_display = kda_l1_multiplier * db_mm
     ldh_kda_display = kda_ldh_multiplier * db_mm
 
     # ==========================================
-    # [SUMMARY SECTION]
+    # [SUMMARY SECTION - VERTICAL LAYOUT]
     # ==========================================
     
-    # --- กล่องที่ 1 (ACI 318-19) ---
-    ax_txt = fig.add_subplot(gs[2, :2])
+    # --- กล่องที่ 1 (ACI 318-19) วางด้านบน ---
+    ax_txt = fig.add_subplot(gs[2, :]) # ใช้พื้นที่เต็มแถว
     ld_mm_display = ld_m * 1000
     ldh_mm_display = ldh_m * 1000
     
     res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
     
-    ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
+    ax_txt.text(0.5, 0.75, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
-    ax_txt.axis('off')
-
-    # --- กล่องที่ 2 (KDA Standard) ---
-    ax_txt2 = fig.add_subplot(gs[2, 2:])
     
+    # --- กล่องที่ 2 (KDA Standard) วางด้านล่างต่อลงมา ---
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                 f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
     
-    ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
+    ax_txt.text(0.5, 0.25, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
                 bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
-    ax_txt2.axis('off')
+    
+    ax_txt.axis('off')
 
     st.pyplot(fig)
 draw_main()
