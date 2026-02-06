@@ -87,17 +87,13 @@ def draw_cross(ax, title, s_type):
     ax.set_title(title, weight='bold', pad=25, fontsize=10)
 
 def draw_main():
-
-# ส่วนหัวข้อหลัก
-
-st.title("RC Beam Inspection")
-
-st.caption("Developed by Ardharn 2026")
+    # ส่วนหัวข้อหลัก
+    st.title("RC Beam Inspection")
+    st.caption("Developed by Ardharn 2026") # เพิ่มบรรทัดนี้ใต้ Title
     
-    # 1. ปรับ Grid เป็น 4 แถว และเพิ่ม hspace เพื่อให้กล่อง Summary ด้านล่างมีที่ว่าง
+    # 1. เตรียมพื้นที่วาดรูป (ปรับเป็น 4 แถวเพื่อไม่ให้ Summary ทับกัน)
     fig = plt.figure(figsize=(16, 15)) 
-    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.4, 0.4], hspace=0.6)
-    
+    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.4, 0.4], hspace=0.7)
     # --- ส่วนวาดรูปตัดตามยาว (Longitudinal Section) ---
     ax0 = fig.add_subplot(gs[0, :])
     
