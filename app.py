@@ -129,7 +129,7 @@ def draw_main():
     ax0.text((et_mid_start+et_mid_end)/2, y_et - 0.08, f"L = {et_cont_total_len:.2f} m", color='darkmagenta', ha='center', weight='bold', fontsize=9)
     ax0.text((eb_start+eb_end)/2, y_eb + 0.05, f"L = {eb_total_len:.2f} m", color='darkorange', ha='center', weight='bold', fontsize=9)
 
-    ax0.set_title(f"LONGITUDINAL SECTION (f'c={fc_ksc:.1f} ksc, fy={fy_ksc} ksc)", fontsize=15, weight='bold', pad=30)
+    ax0.set_title(f"LONGITUDINAL SECTION (f'c={fc_ksc:.1f} ksc, fy={fy_choice} ksc)", fontsize=15, weight='bold', pad=30)
     ax0.set_xlim(-1, x_break+0.5); ax0.set_ylim(-1.0, beam_h+1.0); ax0.set_aspect('equal'); ax0.axis('off')
 
     # --- ส่วนวาดรูปตัดขวาง (Cross Sections) ---
