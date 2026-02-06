@@ -21,10 +21,10 @@ st.sidebar.subheader("Geometry & Reinforcement")
 span_cc = st.sidebar.number_input("Span C/C (m):", value=6.40, step=0.10)
 col_left_w = st.sidebar.number_input("Left Column Width (m):", value=0.40, step=0.05)
 col_right_w = st.sidebar.number_input("Right Column Width (m):", value=0.50, step=0.05)
-beam_h = st.sidebar.number_input("Beam Height (m):", value=0.60, step=0.05)
 db_mm = st.sidebar.number_input("Main Bar Size (DB-mm):", value=20, step=1)
 
 # Fixed Parameters
+beam_h = 0.6
 stirrup_db = 9       
 offset = 0.08
 covering = 0.04
