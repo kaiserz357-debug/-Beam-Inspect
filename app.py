@@ -86,23 +86,33 @@ def draw_cross(ax, title, s_type):
     ax.set_title(title, weight='bold', pad=25, fontsize=10)
 
 def draw_main():
-    st.title("RC Beam Detail (ACI 318-19 SI Metric)")
+    st.title("RC Beam Detail (ACI 318-19 vs KDA)")
     
-    # คำอธิบายสูตรที่ใช้
-    st.info(f"สูตรที่ใช้: Ld = (fy * psi_s) / (1.7 * √f'c) * db  |  Ldh = (fy * psi_c) / (23 * √f'c) * db^1.5")
-
-    fig = plt.figure(figsize=(16, 12))
-    gs = gridspec.GridSpec(3, 4, height_ratios=[1.8, 1, 0.3], hspace=0.2)
+    # 1. ปรับ Grid เป็น 4 แถว และเพิ่ม hspace เพื่อให้กล่อง Summary ด้านล่างมีที่ว่าง
+    fig = plt.figure(figsize=(16, 15)) 
+    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.4, 0.4], hspace=0.6)
+    
+    # --- ส่วนวาดรูปตัดตามยาว (Longitudinal Section) ---
     ax0 = fig.add_subplot(gs[0, :])
     
-    # Columns
+    # Columns & Grid lines
     ax0.axvline(x=0, color='gray', ls='-.', lw=1.2, alpha=0.8)
     ax0.axvline(x=span_cc, color='gray', ls='-.', lw=1.2, alpha=0.8)
+    ax0.text(0, -0.7, f"COL \n({col_left_w:.2f})", color='blue', ha='center', fontsize=10)
+    ax0.text(span_cc, -0.7, f"COL \n({col_right_w:.2f})", color='blue', ha='center', fontsize=10)
+    
     ax0.add_patch(patches.Rectangle((-col_left_w/2, -0.6), col_left_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
     ax0.add_patch(patches.Rectangle((span_cc-col_right_w/2, -0.6), col_right_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
     
-    # Beam
-    ax0.plot([-col_left_w/2, x_break], [beam_h, beam_h], 'k', lw=2); ax0.plot([-col_left_w/2, x_break], [0, 0], 'k', lw=2)
+    # Dimension Lines (เส้นบอกระยะ Span C/C และ Clear Span)
+    ax0.annotate('', xy=(0, beam_h + 0.35), xytext=(span_cc, beam_h + 0.35), arrowprops=dict(arrowstyle='<->', color='red'))
+    ax0.text(span_cc/2, beam_h + 0.40, f"Span C/C = {span_cc:.2f} m.", color='red', ha='center', weight='bold')
+    ax0.annotate('', xy=(x_face_l, -0.35), xytext=(x_face_r, -0.35), arrowprops=dict(arrowstyle='<->', color='black'))
+    ax0.text((x_face_l + x_face_r)/2, -0.45, f"Clear Span Lo = {clear_span:.2f} m.", ha='center')
+
+    # Beam Outline
+    ax0.plot([-col_left_w/2, x_break], [beam_h, beam_h], 'k', lw=2)
+    ax0.plot([-col_left_w/2, x_break], [0, 0], 'k', lw=2)
     
     # Rebars with Calculated Ldh
     x_re_start = x_face_l - ldh_m
@@ -111,7 +121,7 @@ def draw_main():
     ax0.plot([x_re_start, x_break+0.3], [0.05, 0.05], 'red', lw=2)
     ax0.plot([x_re_start, x_re_start], [0.05, 0.05+hook_len], 'red', lw=2)
 
-    # Extra Bars Label
+    # Extra Bars
     y_et, y_eb = beam_h - 0.05 - offset, 0.05 + offset
     ax0.plot([et_mid_start, et_mid_end], [y_et, y_et], 'darkmagenta', lw=2.5)
     ax0.plot([eb_start, eb_end], [y_eb, y_eb], 'orange', lw=2.5)
@@ -121,63 +131,43 @@ def draw_main():
     ax0.set_title(f"LONGITUDINAL SECTION (f'c={fc_mpa:.1f} MPa, fy={fy_mpa} MPa)", fontsize=15, weight='bold', pad=30)
     ax0.set_xlim(-1, x_break+0.5); ax0.set_ylim(-1.0, beam_h+1.0); ax0.set_aspect('equal'); ax0.axis('off')
 
+    # --- ส่วนวาดรูปตัดขวาง (Cross Sections) ---
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-# ==========================================
-    # [KDA STANDARD LOGIC - REVISED]
-    # ==========================================
-    kda_l1_multiplier = 0
-    kda_ldh_multiplier = 0
-
+    # --- 2. [Logic การคำนวณ KDA Standard] ---
+    kda_l1_multiplier, kda_ldh_multiplier = 0, 0
     if fy_choice == 4000:
-        # เงื่อนไขสำหรับ L1 (Lapping)
-        if fc_ksc in [210, 240]:
-            kda_l1_multiplier = 50
-            kda_ldh_multiplier = 17
-        elif fc_ksc in [280, 320, 350]:
-            kda_l1_multiplier = 45
-            kda_ldh_multiplier = 16
-            
+        if fc_ksc in [210, 240]: kda_l1_multiplier, kda_ldh_multiplier = 50, 17
+        elif fc_ksc in [280, 320, 350]: kda_l1_multiplier, kda_ldh_multiplier = 45, 16
     elif fy_choice == 5000:
-        if fc_ksc in [210, 240]:
-            kda_l1_multiplier = 68
-            kda_ldh_multiplier = 21
-        elif fc_ksc == 280:
-            kda_l1_multiplier = 60
-            kda_ldh_multiplier = 20
-        elif fc_ksc in [320, 350]:
-            kda_l1_multiplier = 55
-            kda_ldh_multiplier = 20
+        if fc_ksc in [210, 240]: kda_l1_multiplier, kda_ldh_multiplier = 68, 21
+        elif fc_ksc == 280: kda_l1_multiplier, kda_ldh_multiplier = 60, 20
+        elif fc_ksc in [320, 350]: kda_l1_multiplier, kda_ldh_multiplier = 55, 20
 
-    # คำนวณค่าเพื่อแสดงผล (หน่วย mm)
     l1_kda_display = kda_l1_multiplier * db_mm
     ldh_kda_display = kda_ldh_multiplier * db_mm
 
     # ==========================================
-    # [SUMMARY SECTION]
+    # [SUMMARY SECTION - 2 Boxes Vertical]
     # ==========================================
     
     # --- กล่องที่ 1 (ACI 318-19) ---
-    ax_txt = fig.add_subplot(gs[2, :2])
+    ax_txt1 = fig.add_subplot(gs[2, :])
     ld_mm_display = ld_m * 1000
     ldh_mm_display = ldh_m * 1000
-    
-    res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
-               f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
-    
-    ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
-                bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
-    ax_txt.axis('off')
+    res_txt1 = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
+                f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
+    ax_txt1.text(0.5, 0.5, res_txt1, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
+                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
+    ax_txt1.axis('off')
 
-    # --- กล่องที่ 2 (KDA Standard) ---
-    ax_txt2 = fig.add_subplot(gs[2, 2:])
-    
+    # --- กล่องที่ 2 (KDA Standard) ย้ายมาไว้ใต้กล่อง 1 ---
+    ax_txt2 = fig.add_subplot(gs[3, :])
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                 f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
-    
     ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
-                bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
+                 bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
     ax_txt2.axis('off')
 
     st.pyplot(fig)
