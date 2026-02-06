@@ -7,24 +7,34 @@ import numpy as np
 # ==========================================
 # 1. [INPUT SECTION - STREAMLIT SIDEBAR]
 # ==========================================
-st.set_page_config(layout="wide")
-st.sidebar.header("Beam Design Parameters")
+st.set_page_config(layout="wide", page_title="RC Beam Detailer")
+st.sidebar.header("🛠 Design Parameters")
 
-# แก้ไขจุดที่ต้องการ: f'c เป็น Dropdown
-fc_prime = st.sidebar.selectbox("f'c (ksc):", options=[210, 240, 280, 320, 350], index=2)
+# --- Dropdown Inputs ---
+fc_prime = st.sidebar.selectbox(
+    "Concrete Strength: f'c (ksc)", 
+    options=[210, 240, 280, 320, 350], 
+    index=2
+)
 
-# คืนค่า Input อื่นๆ ทั้งหมดมาให้ปรับแต่งได้
-fy = st.sidebar.number_input("fy (ksc):", value=4000)
-span_cc = st.sidebar.number_input("Span C/C (m):", value=6.40)
-col_left_w = st.sidebar.number_input("Left Column Width (m):", value=0.40)
-col_right_w = st.sidebar.number_input("Right Column Width (m):", value=0.50)
-beam_h = st.sidebar.number_input("Beam Height (m):", value=0.60)
-db_mm = st.sidebar.number_input("Main Bar Size (DB-mm):", value=20)
-stirrup_db = st.sidebar.number_input("Stirrup Size (mm):", value=9)
+fy = st.sidebar.selectbox(
+    "Steel Strength: fy (ksc)", 
+    options=[4000, 5000], 
+    index=0
+)
+
+# --- Numeric Inputs ---
+st.sidebar.subheader("Geometry & Reinforcement")
+span_cc = st.sidebar.number_input("Span C/C (m):", value=6.40, step=0.10)
+col_left_w = st.sidebar.number_input("Left Column Width (m):", value=0.40, step=0.05)
+col_right_w = st.sidebar.number_input("Right Column Width (m):", value=0.50, step=0.05)
+beam_h = st.sidebar.number_input("Beam Height (m):", value=0.60, step=0.05)
+db_mm = st.sidebar.number_input("Main Bar Size (DB-mm):", value=20, step=1)
+stirrup_db = st.sidebar.number_input("Stirrup Size (mm):", value=9, step=1)
+
+# Fixed Parameters
 offset = 0.08
 covering = 0.04
-
-# แปลงหน่วย
 db_m = db_mm / 1000
 
 # ==========================================
@@ -36,9 +46,11 @@ sqrt_fc_ksc = min(np.sqrt(fc_prime), 26.2)
 fc_psi = fc_prime * 14.223
 sqrt_fc_psi = min(np.sqrt(fc_psi), 100)
 
+# Ld calculation
 ld_m = (fy * psi_t * psi_e * psi_g * psi_s) / (5.3 * lambda_val * sqrt_fc_ksc) * db_m
 ld_m = max(ld_m, 0.30)
 
+# Ldh calculation
 psi_c = (fc_psi / 15000) + 0.6 if fc_psi < 6000 else 1.0
 db_in = db_mm / 25.4
 fy_psi = fy * 14.223
@@ -46,7 +58,7 @@ ldh_in = (fy_psi * psi_e * 1.0 * 1.0 * psi_c) / (50 * lambda_val * sqrt_fc_psi) 
 ldh_m = max(ldh_in * 0.0254, 8 * db_m, 0.15)
 
 # ==========================================
-# 3. [COORDINATES]
+# 3. [REVISED COORDINATES]
 # ==========================================
 x_face_l = col_left_w / 2             
 x_face_r = span_cc - col_right_w / 2  
@@ -65,7 +77,7 @@ x_break = span_cc + (col_right_w / 2) + 1.0
 hook_len = 12 * db_m 
 
 # ==========================================
-# 4. [DRAWING FUNCTIONS]
+# 4. [MAIN DRAWING FUNCTION]
 # ==========================================
 def draw_cross(ax, title, s_type):
     b, h = 0.40, 0.60
@@ -90,10 +102,12 @@ def draw_cross(ax, title, s_type):
     ax.set_title(title, weight='bold', pad=25, fontsize=10)
 
 def draw_main():
+    st.title("RC Beam Reinforcement Detail (ACI 318-19)")
+    
     fig = plt.figure(figsize=(16, 12))
     gs = gridspec.GridSpec(3, 4, height_ratios=[1.8, 1, 0.3], hspace=0.2)
     ax0 = fig.add_subplot(gs[0, :])
-
+    
     # --- Columns & Grid lines ---
     ax0.axvline(x=0, color='gray', ls='-.', lw=1.2, alpha=0.8)
     ax0.axvline(x=span_cc, color='gray', ls='-.', lw=1.2, alpha=0.8)
@@ -101,7 +115,7 @@ def draw_main():
     ax0.text(span_cc, -0.7, f"COL \n({col_right_w:.2f})", color='blue', ha='center', fontsize=10)
     
     ax0.add_patch(patches.Rectangle((-col_left_w/2, -0.6), col_left_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
-    ax0.add_patch(patches.Rectangle((span_cc-col_right_w/2, -0.5), col_right_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
+    ax0.add_patch(patches.Rectangle((span_cc-col_right_w/2, -0.6), col_right_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
     
     # Beam Outline
     ax0.plot([-col_left_w/2, x_break], [beam_h, beam_h], 'k', lw=2); ax0.plot([-col_left_w/2, x_break], [0, 0], 'k', lw=2)
@@ -128,7 +142,7 @@ def draw_main():
     ax0.text((et_mid_start+et_mid_end)/2, y_et - 0.08, f"L = {et_cont_total_len:.2f} m", color='darkmagenta', ha='center', weight='bold', fontsize=9)
     ax0.text((eb_start+eb_end)/2, y_eb + 0.05, f"L = {eb_total_len:.2f} m", color='darkorange', ha='center', weight='bold', fontsize=9)
 
-    ax0.set_title("LONGITUDINAL SECTION (ACI 318-19)", fontsize=15, weight='bold', pad=30)
+    ax0.set_title("LONGITUDINAL SECTION", fontsize=15, weight='bold', pad=30)
     ax0.set_xlim(-1, x_break+0.5); ax0.set_ylim(-1.0, beam_h+1.0); ax0.set_aspect('equal'); ax0.axis('off')
 
     # Cross Sections
@@ -137,14 +151,13 @@ def draw_main():
 
     # Calculation Summary (Bottom)
     ax_txt = fig.add_subplot(gs[2, :])
-    res_txt = (f"ACI 318-19 Anchorage Calculation:  f'c = {fc_prime} ksc,  Fy = {fy} ksc,  Main Bar = DB{db_mm}\n"
-               f"Ld (Straight) = {ld_m:.3f} m.    |    Ldh (90 Hook) = {ldh_m:.3f} m.")
+    res_txt = (f"ACI 318-19 Summary:  f'c = {fc_prime} ksc,  Fy = {fy} ksc,  Main Bar = DB{db_mm}\n"
+               f"Development Length: Ld = {ld_m:.3f} m.    |    Hook Length: Ldh = {ldh_m:.3f} m.")
     ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
     ax_txt.axis('off')
-    
-    # ส่งรูปภาพไปที่ Streamlit
+
     st.pyplot(fig)
 
-# เรียกฟังก์ชันวาด
+# Execute
 draw_main()
