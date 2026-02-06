@@ -125,25 +125,34 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
 # ==========================================
-    # [KDA STANDARD LOGIC]
+    # [KDA STANDARD LOGIC - REVISED]
     # ==========================================
-    # กำหนดตัวคูณ (Multiplier) ตามเงื่อนไขที่ระบุ
-    kda_multiplier = 0
+    kda_l1_multiplier = 0
+    kda_ldh_multiplier = 0
+
     if fy_choice == 4000:
+        # เงื่อนไขสำหรับ L1 (Lapping)
         if fc_ksc in [210, 240]:
-            kda_multiplier = 50
+            kda_l1_multiplier = 50
+            kda_ldh_multiplier = 17
         elif fc_ksc in [280, 320, 350]:
-            kda_multiplier = 45
+            kda_l1_multiplier = 45
+            kda_ldh_multiplier = 16
+            
     elif fy_choice == 5000:
         if fc_ksc in [210, 240]:
-            kda_multiplier = 68
+            kda_l1_multiplier = 68
+            kda_ldh_multiplier = 21
         elif fc_ksc == 280:
-            kda_multiplier = 60
+            kda_l1_multiplier = 60
+            kda_ldh_multiplier = 20
         elif fc_ksc in [320, 350]:
-            kda_multiplier = 55
+            kda_l1_multiplier = 55
+            kda_ldh_multiplier = 20
 
-    # คำนวณ L1 ในหน่วย mm (Multiplier * db_mm)
-    l1_mm_display = kda_multiplier * db_mm
+    # คำนวณค่าเพื่อแสดงผล (หน่วย mm)
+    l1_kda_display = kda_l1_multiplier * db_mm
+    ldh_kda_display = kda_ldh_multiplier * db_mm
 
     # ==========================================
     # [SUMMARY SECTION]
@@ -164,14 +173,12 @@ def draw_main():
     # --- กล่องที่ 2 (KDA Standard) ---
     ax_txt2 = fig.add_subplot(gs[2, 2:])
     
-    # แสดงค่า L1 ที่คำนวณจากเงื่อนไขใหม่
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
-                f"L1 (Lapping) = {l1_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
+                f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
     
     ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
                 bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
     ax_txt2.axis('off')
 
     st.pyplot(fig)
-
 draw_main()
