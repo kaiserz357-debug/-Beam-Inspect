@@ -124,21 +124,33 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-# Summary
-    ax_txt = fig.add_subplot(gs[2, :])
+# ==========================================
+    # [SUMMARY SECTION]
+    # ==========================================
     
-    # แปลงค่าจาก m เป็น mm สำหรับการแสดงผล
+    # --- กล่องที่ 1 (ACI 318-19) ---
+    ax_txt = fig.add_subplot(gs[2, :2]) # ฝั่งซ้าย
     ld_mm_display = ld_m * 1000
     ldh_mm_display = ldh_m * 1000
     
-    # แก้ไขการแสดงผล: เปลี่ยนหน่วยเป็น mm และจัดรูปแบบตัวเลข
     res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
     
     ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
     ax_txt.axis('off')
+
+    # --- กล่องที่ 2 (KDA Standard) ---
+    ax_txt2 = fig.add_subplot(gs[2, 2:]) # ฝั่งขวา
     
+    res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
+                f"L1 (Lapping) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
+    
+    ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
+                bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
+    ax_txt2.axis('off')
+    
+    # ส่งรูปภาพไปที่ Streamlit
     st.pyplot(fig)
 
 draw_main()
