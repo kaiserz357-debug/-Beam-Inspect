@@ -125,11 +125,32 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
 # ==========================================
+    # [KDA STANDARD LOGIC]
+    # ==========================================
+    # กำหนดตัวคูณ (Multiplier) ตามเงื่อนไขที่ระบุ
+    kda_multiplier = 0
+    if fy_choice == 4000:
+        if fc_ksc in [210, 240]:
+            kda_multiplier = 50
+        elif fc_ksc in [280, 320, 350]:
+            kda_multiplier = 45
+    elif fy_choice == 5000:
+        if fc_ksc in [210, 240]:
+            kda_multiplier = 68
+        elif fc_ksc == 280:
+            kda_multiplier = 60
+        elif fc_ksc in [320, 350]:
+            kda_multiplier = 55
+
+    # คำนวณ L1 ในหน่วย mm (Multiplier * db_mm)
+    l1_mm_display = kda_multiplier * db_mm
+
+    # ==========================================
     # [SUMMARY SECTION]
     # ==========================================
     
     # --- กล่องที่ 1 (ACI 318-19) ---
-    ax_txt = fig.add_subplot(gs[2, :2]) # ฝั่งซ้าย
+    ax_txt = fig.add_subplot(gs[2, :2])
     ld_mm_display = ld_m * 1000
     ldh_mm_display = ldh_m * 1000
     
@@ -141,16 +162,16 @@ def draw_main():
     ax_txt.axis('off')
 
     # --- กล่องที่ 2 (KDA Standard) ---
-    ax_txt2 = fig.add_subplot(gs[2, 2:]) # ฝั่งขวา
+    ax_txt2 = fig.add_subplot(gs[2, 2:])
     
+    # แสดงค่า L1 ที่คำนวณจากเงื่อนไขใหม่
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
-                f"L1 (Lapping) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
+                f"L1 (Lapping) = {l1_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
     
     ax_txt2.text(0.5, 0.5, res_txt2, ha='center', va='center', fontsize=12, weight='bold', color='#1a237e',
                 bbox=dict(facecolor='#e8eaf6', edgecolor='#1a237e', boxstyle='round,pad=1.0'))
     ax_txt2.axis('off')
-    
-    # ส่งรูปภาพไปที่ Streamlit
+
     st.pyplot(fig)
 
 draw_main()
