@@ -10,16 +10,13 @@ import numpy as np
 st.set_page_config(layout="wide", page_title="RC Beam Detailer (SI Units)")
 st.sidebar.header("🛠 Design Parameters (SI Units)")
 
-# f'c Dropdown (ksc)
 fc_ksc = st.sidebar.selectbox("Concrete Strength: f'c (ksc)", options=[210, 240, 280, 320, 350], index=2)
-# fy Dropdown (ksc) -> Mapping to MPa
 fy_choice = st.sidebar.selectbox("Steel Strength: fy (ksc)", options=[4000, 5000], index=0)
 
-# แปลงหน่วยเป็น MPa สำหรับการคำนวณ SI
+# Conversion to MPa for SI Calculation
 fc_mpa = fc_ksc * 0.0980665
 fy_mpa = 390 if fy_choice == 4000 else 490
 
-# Numeric Inputs
 st.sidebar.subheader("Geometry & Reinforcement")
 span_cc = st.sidebar.number_input("Span C/C (m):", value=6.40, step=0.10)
 col_left_w = st.sidebar.number_input("Left Column Width (m):", value=0.40, step=0.05)
@@ -34,27 +31,24 @@ covering = 0.04
 db_m = db_mm / 1000
 
 # ==========================================
-# 2. [ACI 318-19 SI CALCULATION]
+# 2. [REVISED SI CALCULATION]
 # ==========================================
-# Factors
 psi_t, psi_e, psi_g, lambda_val = 1.0, 1.0, 1.0, 1.0
 psi_s = 0.8 if db_mm <= 19 else 1.0  
-sqrt_fc_mpa = min(np.sqrt(fc_mpa), 8.3) # Limit sqrt(f'c) at 100 psi (8.3 MPa)
+sqrt_fc_mpa = min(np.sqrt(fc_mpa), 8.3) 
 
-# Ld (Straight Bar) - SI Formula
-ld_m_val = (fy_mpa * psi_t * psi_e * psi_g * psi_s) / (1.1 * lambda_val * sqrt_fc_mpa) * (db_mm / 1000)
+# Ld (Straight Bar) - ใช้ตัวหาร 1.7 ตามเงื่อนไข Clear Space เพียงพอ
+ld_m_val = (fy_mpa * psi_t * psi_e * psi_g * psi_s) / (1.7 * lambda_val * sqrt_fc_mpa) * (db_mm / 1000)
 ld_m = max(ld_m_val, 0.30)
 
-# Ldh (90-deg Hook) - SI Formula
-# psi_c for hook (Simplified ACI 318-19)
+# Ldh (90-deg Hook) - ใช้ตัวหาร 23 ตามที่ระบุ
 psi_c = (fc_mpa / 103.5) + 0.6 if fc_mpa < 40 else 1.0
-ldh_mm = (fy_mpa * psi_e * psi_c * 1.0) / (1.7 * lambda_val * sqrt_fc_mpa) * (db_mm**1.5)
+ldh_mm = (fy_mpa * psi_e * psi_c * 1.0) / (23 * lambda_val * sqrt_fc_mpa) * (db_mm**1.5)
 ldh_m = max(ldh_mm / 1000, 8 * db_m, 0.15)
 
 # ==========================================
 # 3. [COORDINATES & DRAWING]
 # ==========================================
-# (ส่วนนี้คงเดิมจาก Logic เดิมของคุณเพื่อให้รูปวาดออกมาเหมือนเดิม)
 x_face_l = col_left_w / 2             
 x_face_r = span_cc - col_right_w / 2  
 clear_span = x_face_r - x_face_l      
@@ -93,25 +87,31 @@ def draw_cross(ax, title, s_type):
 
 def draw_main():
     st.title("RC Beam Detail (ACI 318-19 SI Metric)")
+    
+    # คำอธิบายสูตรที่ใช้
+    st.info(f"สูตรที่ใช้: Ld = (fy * psi_s) / (1.7 * √f'c) * db  |  Ldh = (fy * psi_c) / (23 * √f'c) * db^1.5")
+
     fig = plt.figure(figsize=(16, 12))
     gs = gridspec.GridSpec(3, 4, height_ratios=[1.8, 1, 0.3], hspace=0.2)
     ax0 = fig.add_subplot(gs[0, :])
     
-    # Grid & Columns
+    # Columns
     ax0.axvline(x=0, color='gray', ls='-.', lw=1.2, alpha=0.8)
     ax0.axvline(x=span_cc, color='gray', ls='-.', lw=1.2, alpha=0.8)
     ax0.add_patch(patches.Rectangle((-col_left_w/2, -0.6), col_left_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
     ax0.add_patch(patches.Rectangle((span_cc-col_right_w/2, -0.6), col_right_w, beam_h+1.2, color='#f2f2f2', ec='gray', ls='--'))
     
-    # Beam & Rebars
+    # Beam
     ax0.plot([-col_left_w/2, x_break], [beam_h, beam_h], 'k', lw=2); ax0.plot([-col_left_w/2, x_break], [0, 0], 'k', lw=2)
+    
+    # Rebars with Calculated Ldh
     x_re_start = x_face_l - ldh_m
     ax0.plot([x_re_start, x_break+0.3], [beam_h-0.05, beam_h-0.05], 'blue', lw=2)
     ax0.plot([x_re_start, x_re_start], [beam_h-0.05, beam_h-0.05-hook_len], 'blue', lw=2)
     ax0.plot([x_re_start, x_break+0.3], [0.05, 0.05], 'red', lw=2)
     ax0.plot([x_re_start, x_re_start], [0.05, 0.05+hook_len], 'red', lw=2)
 
-    # Extra Bars
+    # Extra Bars Label
     y_et, y_eb = beam_h - 0.05 - offset, 0.05 + offset
     ax0.plot([et_mid_start, et_mid_end], [y_et, y_et], 'darkmagenta', lw=2.5)
     ax0.plot([eb_start, eb_end], [y_eb, y_eb], 'orange', lw=2.5)
@@ -124,10 +124,10 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-    # Summary Box
+    # Summary
     ax_txt = fig.add_subplot(gs[2, :])
-    res_txt = (f"SI Units Calculation: f'c = {fc_mpa:.2f} MPa,  fy = {fy_mpa} MPa,  Main Bar = DB{db_mm}\n"
-               f"Ld (Straight) = {ld_m:.3f} m.    |    Ldh (90 Hook) = {ldh_m:.3f} m.")
+    res_txt = (f"SI Units: f'c = {fc_mpa:.2f} MPa, fy = {fy_mpa} MPa, Bar = DB{db_mm}\n"
+               f"Ld (Div 1.7) = {ld_m:.3f} m.  |  Ldh (Div 23) = {ldh_m:.3f} m.")
     ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
     ax_txt.axis('off')
