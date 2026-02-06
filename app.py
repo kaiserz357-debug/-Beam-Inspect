@@ -87,7 +87,12 @@ def draw_cross(ax, title, s_type):
     ax.set_title(title, weight='bold', pad=25, fontsize=10)
 
 def draw_main():
-    st.title("RC Beam Inspection")
+
+# ส่วนหัวข้อหลัก
+
+st.title("RC Beam Inspection")
+
+st.caption("Developed by Ardharn 2026")
     
     # 1. ปรับ Grid เป็น 4 แถว และเพิ่ม hspace เพื่อให้กล่อง Summary ด้านล่างมีที่ว่าง
     fig = plt.figure(figsize=(16, 15)) 
