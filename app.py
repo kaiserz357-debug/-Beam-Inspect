@@ -124,13 +124,16 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-    # Summary
+# Summary
     ax_txt = fig.add_subplot(gs[2, :])
-    res_txt = (f"SI Units: f'c = {fc_mpa:.2f} MPa, fy = {fy_mpa} MPa, Bar = DB{db_mm}\n"
-               f"Ld (Div 1.7) = {ld_m:.3f} m.  |  Ldh (Div 23) = {ldh_m:.3f} m.")
+    # แก้ไขการแสดงผล: เปลี่ยนเป็น ACI 318-19 และใช้หน่วย ksc สำหรับ f'c, fy
+    res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
+               f"Ld (Straight) = {ld_m:.3f} m.  |  Ldh (90 Hook) = {ldh_m:.3f} m.")
+    
     ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
     ax_txt.axis('off')
+    
     st.pyplot(fig)
 
 draw_main()
