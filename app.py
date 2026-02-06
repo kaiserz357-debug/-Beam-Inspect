@@ -126,9 +126,14 @@ def draw_main():
 
 # Summary
     ax_txt = fig.add_subplot(gs[2, :])
-    # แก้ไขการแสดงผล: เปลี่ยนเป็น ACI 318-19 และใช้หน่วย ksc สำหรับ f'c, fy
+    
+    # แปลงค่าจาก m เป็น mm สำหรับการแสดงผล
+    ld_mm_display = ld_m * 1000
+    ldh_mm_display = ldh_m * 1000
+    
+    # แก้ไขการแสดงผล: เปลี่ยนหน่วยเป็น mm และจัดรูปแบบตัวเลข
     res_txt = (f"ACI 318-19: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
-               f"Ld (Straight) = {ld_m:.3f} m.  |  Ldh (90 Hook) = {ldh_m:.3f} m.")
+               f"Ld (Straight) = {ld_mm_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_mm_display:.0f} mm.")
     
     ax_txt.text(0.5, 0.5, res_txt, ha='center', va='center', fontsize=12, weight='bold', color='darkgreen',
                 bbox=dict(facecolor='#f1f8e9', edgecolor='darkgreen', boxstyle='round,pad=1.0'))
