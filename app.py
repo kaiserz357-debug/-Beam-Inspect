@@ -124,13 +124,21 @@ def draw_main():
     draw_cross(fig.add_subplot(gs[1, 1]), "Section B-B (Mid-Span)", "mid")
     draw_cross(fig.add_subplot(gs[1, 2]), "Section A-A (Support)", "support")
 
-# ==========================================
-    # [SUMMARY SECTION - NEW VERTICAL LAYOUT]
+def draw_main():
+    st.title("RC Beam Reinforcement Detail (ACI 318-19 vs KDA)")
+    
+    # --- จุดที่ต้องแก้: เพิ่มแถวจาก 3 เป็น 4 และปรับ hspace ---
+    fig = plt.figure(figsize=(16, 14)) # เพิ่มความสูงรูปเล็กน้อย
+    gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.35, 0.35], hspace=0.6)
+    
+    # ... (ส่วนการวาด ax0 และ cross section คงเดิม) ...
+    # สมมติว่าวาด ax0 = fig.add_subplot(gs[0, :])
+    # สมมติว่าวาด cross section ที่ gs[1, 1] และ gs[1, 2]
+    
     # ==========================================
-    # ปรับสัดส่วน Grid ให้มีแถวเพิ่มสำหรับ Summary ตัวที่สอง
-    # (หมายเหตุ: ตอนสร้าง gridspec ให้เพิ่มจำนวนแถวเป็น 4 แถว)
-    # gs = gridspec.GridSpec(4, 4, height_ratios=[1.8, 1, 0.4, 0.4], hspace=0.4)
-
+    # [SUMMARY SECTION - VERTICAL LAYOUT]
+    # ==========================================
+    
     # --- กล่องที่ 1 (ACI 318-19) ---
     ax_txt1 = fig.add_subplot(gs[2, :]) 
     ld_mm_display = ld_m * 1000
@@ -144,8 +152,9 @@ def draw_main():
     ax_txt1.axis('off')
 
     # --- กล่องที่ 2 (KDA Standard) ---
-    ax_txt2 = fig.add_subplot(gs[3, :]) # แยกมาอยู่อีกแถวหนึ่งเลย (gs[3, :])
+    ax_txt2 = fig.add_subplot(gs[3, :]) 
     
+    # คำนวณค่า KDA (ตรวจสอบให้แน่ใจว่า Logic นี้อยู่นอกหรือใน draw_main ก็ได้แต่ต้องก่อนบรรทัดนี้)
     res_txt2 = (f"KDA Standard: f'c = {fc_ksc} ksc,  fy = {fy_choice} ksc,  Main Bar = DB{db_mm}\n"
                 f"L1 (Lapping) = {l1_kda_display:.0f} mm.  |  Ldh (90 Hook) = {ldh_kda_display:.0f} mm.")
     
